@@ -1,5 +1,5 @@
 const Page = () => {
-  return <div></div>;
+  return <div className="text-xl"></div>;
 };
 
 export default Page;

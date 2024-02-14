@@ -8,6 +8,7 @@ import NavigationItem from "./NavigationItem";
 import { ScrollArea } from "../ui/scroll-area";
 import { Separator } from "../ui/separator";
 import { ModeToggle } from "../ModeToggle";
+
 import { UserButton } from "@clerk/nextjs";
 
 const NavigationSidebar = async () => {
