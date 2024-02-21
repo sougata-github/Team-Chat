@@ -97,7 +97,7 @@ const CreateChannelModal = () => {
       <DialogContent className="bg-white text-black p-0 overflow-hidden">
         <DialogHeader className="pt-8 px-6">
           <DialogTitle className="text-2xl font-bold text-center">
-            Customize Channel
+            Create Channel
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>

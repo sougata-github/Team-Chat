@@ -5,6 +5,8 @@ import { v4 as uuidv4 } from "uuid";
 
 import { NextResponse } from "next/server";
 
+import { MemberRole } from "@prisma/client";
+
 export async function PATCH(
   req: Request,
   { params }: { params: { serverId: string } }
@@ -20,11 +22,18 @@ export async function PATCH(
       return new NextResponse("Server ID missing", { status: 400 });
     }
 
-    //update invite code
+    //update invite code when you are a guest or a moderator.
     const server = await db.server.update({
       where: {
         id: params.serverId,
-        profileId: profile.id,
+        members: {
+          some: {
+            profileId: profile.id,
+            role: {
+              in: [MemberRole.ADMIN, MemberRole.MODERATOR],
+            },
+          },
+        },
       },
       data: {
         inviteCode: uuidv4(),
