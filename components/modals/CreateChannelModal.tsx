@@ -37,6 +37,7 @@ import { Button } from "../ui/button";
 
 import { useParams, useRouter } from "next/navigation";
 import { useModal } from "@/hooks/useModalStore";
+import { useEffect } from "react";
 
 const formSchema = z.object({
   name: z
@@ -51,9 +52,10 @@ const formSchema = z.object({
 });
 
 const CreateChannelModal = () => {
-  const { isOpen, onClose, type } = useModal();
+  const { isOpen, onClose, type, data } = useModal();
 
   const isModalOpen = isOpen && type === "createChannel";
+  const { channelType } = data;
 
   const router = useRouter();
 
@@ -63,9 +65,17 @@ const CreateChannelModal = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      type: ChannelType.TEXT,
+      type: channelType || ChannelType.TEXT,
     },
   });
+
+  useEffect(() => {
+    if (channelType) {
+      form.setValue("type", channelType);
+    } else {
+      form.setValue("type", ChannelType.TEXT);
+    }
+  }, [channelType, form]);
 
   const isLoading = form.formState.isSubmitting;
 
