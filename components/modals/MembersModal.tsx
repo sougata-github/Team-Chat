@@ -159,7 +159,7 @@ const MembersModal = () => {
                                 <ShieldCheck className="h-4 w-4 mr-2" />
                                 Moderator
                                 {member.role === "MODERATOR" && (
-                                  <Check className="h-4 w-4 ml-auto" />
+                                  <Check className="h-4 w-4 ml-2" />
                                 )}
                               </DropdownMenuItem>
                             </DropdownMenuSubContent>
