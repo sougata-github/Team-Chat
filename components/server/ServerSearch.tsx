@@ -61,7 +61,7 @@ const ServerSearch = ({ data }: ServerSearchProps) => {
     }
 
     if (type === "channel") {
-      return router.push(`/server/${params?.id}/channels/${id}`);
+      return router.push(`/server/${params?.serverId}/channels/${id}`);
     }
   };
 
