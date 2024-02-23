@@ -22,7 +22,7 @@ export async function PATCH(
       return new NextResponse("Server ID missing", { status: 400 });
     }
 
-    //update invite code when you are a guest or a moderator.
+    //update invite code when you are an admin or a moderator.
     const server = await db.server.update({
       where: {
         id: params.serverId,
