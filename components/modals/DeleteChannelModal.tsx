@@ -9,32 +9,43 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 
+import { useRouter } from "next/navigation";
 import { useModal } from "@/hooks/useModalStore";
 import { useState } from "react";
 
 import axios from "axios";
-import { Button } from "../ui/button";
-import { useRouter } from "next/navigation";
 
-const DeleteServerModal = () => {
+import qs from "query-string";
+
+import { Button } from "../ui/button";
+
+const DeleteChannelModal = () => {
   const { isOpen, onClose, type, data } = useModal();
 
-  const { server } = data;
+  const { server, channel } = data;
 
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
 
-  const isModalOpen = isOpen && type === "deleteServer";
+  const isModalOpen = isOpen && type === "deleteChannel";
 
   const onClick = async () => {
     try {
       setIsLoading(true);
-      await axios.delete(`/api/servers/${server?.id}`);
+
+      const url = qs.stringifyUrl({
+        url: `/api/channels/${channel?.id}`,
+        query: {
+          serverId: server?.id,
+        },
+      });
+
+      await axios.delete(url);
 
       onClose();
 
-      router.push("/");
+      router.push(`/servers/${server?.id}`);
       router.refresh();
     } catch (error) {
       console.log(error);
@@ -48,12 +59,12 @@ const DeleteServerModal = () => {
       <DialogContent className="bg-white text-black p-0 overflow-hidden">
         <DialogHeader className="pt-8 px-6">
           <DialogTitle className="text-2xl font-bold text-center">
-            Delete Server
+            Delete Channel
           </DialogTitle>
           <DialogDescription className="text-center text-zinc-500">
             Are you sure you want to do this? <br />
             <span className="font-semibold text-indigo-500">
-              {server?.name}{" "}
+              #{channel?.name}{" "}
             </span>
             will be permanently deleted.
           </DialogDescription>
@@ -73,4 +84,4 @@ const DeleteServerModal = () => {
   );
 };
 
-export default DeleteServerModal;
+export default DeleteChannelModal;
