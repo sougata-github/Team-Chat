@@ -95,8 +95,6 @@ const MembersModal = () => {
 
       router.refresh();
       onOpen("members", { server: response.data });
-
-      router;
     } catch (error) {
       console.log(error);
     } finally {
