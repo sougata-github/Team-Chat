@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { Open_Sans } from "next/font/google";
+
 import "./globals.css";
 
 import { ClerkProvider } from "@clerk/nextjs";
-import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import { cn } from "@/lib/utils";
 import ModalProvider from "@/components/providers/ModalProvider";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { SocketProvider } from "@/components/providers/SocketProvider";
+
+import { cn } from "@/lib/utils";
 
 const font = Open_Sans({ subsets: ["latin"] });
 
@@ -30,8 +33,10 @@ export default function RootLayout({
             disableTransitionOnChange
             storageKey="team-chat-theme"
           >
-            <ModalProvider />
-            {children}
+            <SocketProvider>
+              <ModalProvider />
+              {children}
+            </SocketProvider>
           </ThemeProvider>
         </body>
       </html>
