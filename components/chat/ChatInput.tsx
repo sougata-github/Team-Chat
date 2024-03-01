@@ -71,6 +71,7 @@ const ChatInput = ({ apiUrl, query, name, type }: ChatInputProps) => {
                       type === "conversation" ? name : "#" + name
                     }`}
                     {...field}
+                    autoComplete="off"
                   />
                   <div className="absolute top-7 right-8">
                     <Smile />
