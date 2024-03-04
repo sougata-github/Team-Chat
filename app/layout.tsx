@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+
 import { Open_Sans } from "next/font/google";
 
 import "./globals.css";
@@ -7,6 +8,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import ModalProvider from "@/components/providers/ModalProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { SocketProvider } from "@/components/providers/SocketProvider";
+import { QueryProvider } from "@/components/providers/QueryProvider";
 
 import { cn } from "@/lib/utils";
 
@@ -35,7 +37,7 @@ export default function RootLayout({
           >
             <SocketProvider>
               <ModalProvider />
-              {children}
+              <QueryProvider>{children}</QueryProvider>
             </SocketProvider>
           </ThemeProvider>
         </body>
