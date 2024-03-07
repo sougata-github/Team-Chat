@@ -8,6 +8,7 @@ import DeleteServerModal from "../modals/DeleteServerModal";
 import DeleteChannelModal from "../modals/DeleteChannelModal";
 import EditChannelModal from "../modals/EditChannelModal";
 import MessageFileModal from "../modals/MessageFileModal";
+import DeleteMessageModal from "./DeleteMessageModal";
 
 export {
   CreateServerModal,
@@ -20,4 +21,5 @@ export {
   DeleteChannelModal,
   EditChannelModal,
   MessageFileModal,
+  DeleteMessageModal,
 };
