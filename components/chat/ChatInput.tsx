@@ -15,6 +15,7 @@ import { Input } from "../ui/input";
 import { Plus } from "lucide-react";
 
 import EmojiPicker from "../EmojiPicker";
+
 import { useRouter } from "next/navigation";
 
 interface ChatInputProps {
@@ -52,7 +53,6 @@ const ChatInput = ({ apiUrl, query, name, type }: ChatInputProps) => {
       await axios.post(url, values);
 
       form.reset();
-
       router.refresh();
     } catch (error) {
       console.log(error);
