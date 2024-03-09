@@ -82,3 +82,12 @@ export const useChatSocket = ({
     };
   }, [queryClient, addKey, queryKey, socket, updateKey]);
 };
+
+/*The WebSocket instance receives messages from the server, 
+and when specific messages are received (identified by the addKey and updateKey), the useChatSocket hook uses React Query's setQueryData function to update the query data stored in the client-side cache.
+
+When a message is received with the addKey, it means a new message should be added to the list of messages. The hook then updates the query data accordingly by adding the new message to the existing list of messages.
+
+Similarly, when a message is received with the updateKey, it means an existing message has been updated. In this case, the hook finds the corresponding message in the list and replaces it with the updated message.
+
+By updating the query data in this manner, React Query automatically triggers re-renders of components that are subscribed to this data, ensuring that the UI stays up-to-date with the latest information received from the WebSocket server.*/
