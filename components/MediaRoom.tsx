@@ -21,9 +21,19 @@ const MediaRoom = ({ chatId, video, audio }: MediaRoomProps) => {
   const [token, setToken] = useState();
 
   useEffect(() => {
-    if (!user?.firstName || !user?.lastName) return;
+    if (
+      typeof user?.firstName == "undefined" ||
+      typeof user?.lastName == "undefined"
+    )
+      return;
 
-    const name = `${user.firstName} ${user.lastName}`;
+    function random4DigitNumber() {
+      // Generate a random number between 1000 and 9999 (inclusive)
+      return Math.floor(Math.random() * 9000) + 1000;
+    }
+
+    const name = `${user.firstName} ${user.lastName} - ${random4DigitNumber()}`;
+    //the random4DigitNumber to prevent disconnected livekit if 2 person have same name.
 
     (async () => {
       try {
