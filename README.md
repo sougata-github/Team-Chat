@@ -26,7 +26,7 @@
 - Tailwind CSS
 - Prisma
 - NeonDB
-- SocketIO
+- Socket IO
 - React Query
 - Clerk
 - Uploadthing
