@@ -35,3 +35,7 @@
 - Zustand
 - Emoji mart
 - Axios
+- Zod
+- Next themes
+- Vercel
+
