@@ -225,7 +225,12 @@ const ChatItem = ({
                     </FormItem>
                   )}
                 />
-                <Button disabled={isLoading} size="sm" variant="primary">
+                <Button
+                  disabled={isLoading}
+                  size="sm"
+                  variant="primary"
+                  className="mr-2"
+                >
                   Save
                 </Button>
               </form>
