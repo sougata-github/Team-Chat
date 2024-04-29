@@ -44,7 +44,7 @@ const Page = async ({ params }: ChannelIdProps) => {
   }
 
   return (
-    <div className="bg-white dark:bg-[#313338] flex flex-col h-full">
+    <div className="bg-white dark:bg-[#313338] flex flex-col h-full overflow-hidden sm:overflow-y-auto custom-scrollbar">
       <ChatHeader
         name={channel.name}
         serverId={channel.serverId}
@@ -81,7 +81,7 @@ const Page = async ({ params }: ChannelIdProps) => {
         <MediaRoom chatId={channel.id} video={false} audio={true} />
       )}
       {channel.type === ChannelType.VIDEO && (
-        <MediaRoom chatId={channel.id} video={true} audio={false} />
+        <MediaRoom chatId={channel.id} video={true} audio={true} />
       )}
     </div>
   );

@@ -8,6 +8,24 @@ body,
   height: 100%;
 }
 
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 10px;
+    height: 3px;
+    border-radius: 2px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 50px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 50px;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

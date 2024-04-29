@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { Open_Sans } from "next/font/google";
+import { Poppins } from "next/font/google";
 
 import "./globals.css";
 
@@ -12,7 +12,10 @@ import { QueryProvider } from "@/components/providers/QueryProvider";
 
 import { cn } from "@/lib/utils";
 
-const font = Open_Sans({ subsets: ["latin"] });
+const font = Poppins({
+  subsets: ["latin"],
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+});
 
 export const metadata: Metadata = {
   title: "Team Chat",

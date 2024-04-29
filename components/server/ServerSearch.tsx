@@ -68,7 +68,7 @@ const ServerSearch = ({ data }: ServerSearchProps) => {
   return (
     <>
       <button
-        className="group px-2 py-2 rounded-md flex items-center gap-x-2 w-full hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 transition"
+        className="group px-2 py-2 rounded-md flex items-center gap-x-2 w-full hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 transition "
         onClick={() => setOpen(true)}
       >
         <Search className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
@@ -78,7 +78,7 @@ const ServerSearch = ({ data }: ServerSearchProps) => {
       </button>
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder="Search all channels and members" />
-        <CommandList>
+        <CommandList className="custom-scrollbar">
           <CommandEmpty>No results found</CommandEmpty>
           {data.map(({ label, type, data }) => {
             if (!data?.length) return null;
