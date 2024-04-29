@@ -1,6 +1,7 @@
 # Team-Chat 
 ### Full-Stack discord clone built using NextJS.
-![Thumbnail](https://github.com/sougata-github/Team-Chat/assets/102734212/50d3888c-3036-4c3b-9c73-2a867b9546e1)
+![Team](https://github.com/sougata-github/Team-Chat/assets/102734212/0993940f-bf6c-4480-bbe2-5fe2642cc42b)
+
 
 ## Key Features
 
