@@ -1,5 +1,5 @@
 # Team-Chat 
-### Full-Stack discord clone built using NextJS.
+### Full-Stack discord clone built using Next.js.
 
 
 ## Preview of live site
@@ -25,7 +25,7 @@
 
 ## Tech-Stack 
 
-- NextJS 14
+- Next.js 14
 - TypeScript
 - Tailwind CSS
 - Prisma
