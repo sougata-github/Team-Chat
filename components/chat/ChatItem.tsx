@@ -86,7 +86,7 @@ const ChatItem = ({
   const isModerator = currentMember.role === MemberRole.MODERATOR;
   const isOwner = currentMember.id === member.id;
 
-  const canDeleteMessage = !deleted && (isAdmin || isModerator || isOwner);
+  const canDeleteMessage = !deleted && isOwner;
   const canEditMessage = !deleted && isOwner && !fileUrl;
 
   const isPDF = fileType === "pdf";

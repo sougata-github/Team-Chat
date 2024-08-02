@@ -16,7 +16,7 @@ export async function POST(req: Request) {
 
     const server = await db.server.create({
       data: {
-        profileId: profile.id,
+        profileId: profile.id, //creatior of server -> admin of server
         name,
         imageUrl,
         inviteCode: uuidv4(),
