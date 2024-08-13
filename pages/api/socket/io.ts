@@ -25,3 +25,15 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponseServerIo) => {
 };
 
 export default ioHandler;
+
+/*
+ Sets up a SocketIO server in a Next.js Api route
+  
+ It checks if the io instance is already attached to the server socket.
+
+ If not, it creates a new Socket.IO server instance and attaches it to the server socket.
+
+ Sets up the Socket.IO server to listen on a specific path (/api/socket/io).
+ 
+ Finally, it ends the API response.
+*/
