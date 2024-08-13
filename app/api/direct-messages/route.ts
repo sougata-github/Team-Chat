@@ -21,7 +21,7 @@ export async function GET(req: Request) {
     }
 
     if (!conversationId) {
-      return new NextResponse("Channel Id missing", { status: 400 });
+      return new NextResponse("Coversation Id missing", { status: 400 });
     }
 
     let messages: DirectMessage[] = [];

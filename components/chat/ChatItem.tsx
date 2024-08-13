@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
 import qs from "query-string";
 
-import { Member, MemberRole, Profile } from "@prisma/client";
+import { Member, Profile } from "@prisma/client";
 
 import UserAvatar from "../UserAvatar";
 import ActionTooltip from "../ActionTooltip";
@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 
 interface ChatItemProps {
   id: string;
+  type: "channel" | "conversation";
   content: string;
   member: Member & {
     profile: Profile;
@@ -52,6 +53,7 @@ const formSchema = z.object({
 
 const ChatItem = ({
   id,
+  type,
   content,
   member,
   timestamp,
@@ -82,11 +84,14 @@ const ChatItem = ({
 
   const fileType = fileUrl?.split(".").pop();
 
-  const isAdmin = currentMember.role === MemberRole.ADMIN;
-  const isModerator = currentMember.role === MemberRole.MODERATOR;
   const isOwner = currentMember.id === member.id;
 
-  const canDeleteMessage = !deleted && isOwner;
+  const isAdmin = currentMember.role === "ADMIN";
+
+  const canDeleteMessage =
+    type === "channel"
+      ? (isAdmin && !deleted) || (!deleted && isOwner)
+      : !deleted && isOwner;
   const canEditMessage = !deleted && isOwner && !fileUrl;
 
   const isPDF = fileType === "pdf";
