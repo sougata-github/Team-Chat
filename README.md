@@ -4,8 +4,7 @@
 
 ## Preview of live site
 
-![chrome_524D6VUCdF](https://github.com/sougata-github/Team-Chat/assets/102734212/4dfe809b-0142-4627-857f-a111b459dfd5)
-![chrome_TWGeMrgmXO](https://github.com/sougata-github/Team-Chat/assets/102734212/92ae53d0-4d33-40c7-b601-597513aaa02b)
+<img width="1920" height="1080" alt="Screenshot (23)" src="https://github.com/user-attachments/assets/7962483b-1078-4995-b03e-7468dee51ca9" />
 
 ## Key Features
 
