@@ -31,6 +31,8 @@ interface ChatItemProps {
   memberIcon: string;
   timestamp: string;
   fileUrl?: string | null;
+  fileName?: string | null;
+  fileType?: string | null;
   deleted: boolean;
   currentMember: Doc<"members">;
   isUpdated: boolean;
@@ -55,6 +57,8 @@ const ChatItem = ({
   memberIcon,
   timestamp,
   fileUrl,
+  fileName,
+  fileType,
   deleted,
   currentMember,
   isUpdated,
@@ -93,8 +97,7 @@ const ChatItem = ({
 
   const canEditMessage = !deleted && isAuthor && !fileUrl;
 
-  const fileType = fileUrl?.split(".").pop();
-  const isPDF = fileType === "pdf";
+  const isPDF = fileType === "application/pdf";
   const isImage = !isPDF && fileUrl;
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -182,7 +185,7 @@ const ChatItem = ({
             </div>
             <span className="text-xs text-muted-foreground">{timestamp}</span>
           </div>
-          {isImage && (
+          {isImage && !deleted && (
             <a
               href={fileUrl}
               target="_blank"
@@ -191,13 +194,13 @@ const ChatItem = ({
             >
               <Image
                 src={fileUrl}
-                alt="content-image"
+                alt={`${fileName}`}
                 fill
                 className="object-cover"
               />
             </a>
           )}
-          {isPDF && (
+          {isPDF && !deleted && (
             <div className="relative flex items-center p-2 mt-2 rounded-md">
               <FileIcon className="h-10 w-10 fill-indigo-200 stroke-indigo-400" />
               <a
@@ -206,7 +209,7 @@ const ChatItem = ({
                 rel="noopener noreferrer"
                 className="ml-2 text-sm text-indigo-500 dark:text-indigo-400 hover:underline"
               >
-                PDF file
+                {fileName}
               </a>
             </div>
           )}

@@ -16,17 +16,11 @@ import { Button } from "../ui/button";
 import FileUpload from "../FileUpload";
 import { Form, FormField, FormItem } from "../ui/form";
 
-import { useRouter } from "next/navigation";
 import { useModal } from "@/hooks/useModalStore";
 
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-
-const formSchema = z.object({
-  fileUrl: z.string().min(1, {
-    message: "Attachment is required",
-  }),
-});
+import { FileFormSchema } from "@/schemas";
 
 const MessageFileModal = () => {
   const { isOpen, onClose, type, data } = useModal();
@@ -36,9 +30,14 @@ const MessageFileModal = () => {
   const isModalOpen = isOpen && type === "messageFile";
 
   const form = useForm({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(FileFormSchema),
     defaultValues: {
-      fileUrl: "",
+      file: {
+        fileName: "",
+        fileKey: "",
+        fileUrl: "",
+        fileType: "",
+      },
     },
   });
 
@@ -47,13 +46,16 @@ const MessageFileModal = () => {
 
   const isLoading = form.formState.isSubmitting;
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof FileFormSchema>) => {
     try {
       if (query?.type === "channel") {
         await createMessage({
           channelId: query?.channelId,
           memberId: query?.memberId,
-          fileUrl: values.fileUrl,
+          fileUrl: values.file.fileUrl,
+          fileName: values.file.fileName,
+          fileKey: values.file.fileKey,
+          fileType: values.file.fileType,
           content: "",
           memberIcon: query.memberIcon,
           memberName: query.memberName,
@@ -62,7 +64,10 @@ const MessageFileModal = () => {
         await createDirectMessage({
           conversationId: query?.conversationId,
           memberId: query?.memberId,
-          fileUrl: values.fileUrl,
+          fileUrl: values.file.fileUrl,
+          fileName: values.file.fileName,
+          fileKey: values.file.fileKey,
+          fileType: values.file.fileType,
           content: "",
           memberIcon: query?.memberIcon,
           memberName: query?.memberName,
@@ -97,7 +102,7 @@ const MessageFileModal = () => {
               <div className="flex items-center justify-center text-center">
                 <FormField
                   control={form.control}
-                  name="fileUrl"
+                  name="file"
                   render={({ field }) => (
                     <FormItem>
                       <FileUpload

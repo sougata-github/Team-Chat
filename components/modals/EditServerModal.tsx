@@ -29,14 +29,13 @@ import { useEffect } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useModal } from "@/hooks/useModalStore";
+import { FileFormSchema } from "@/schemas";
 
 const formSchema = z.object({
   name: z.string().min(1, {
     message: "Server name is required.",
   }),
-  imageUrl: z.string().min(1, {
-    message: "Server image is required",
-  }),
+  file: FileFormSchema,
 });
 
 const EditServerModal = () => {
@@ -51,14 +50,21 @@ const EditServerModal = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      imageUrl: "",
+      file: {
+        file: {
+          fileName: "",
+          fileKey: "",
+          fileUrl: "",
+          fileType: "",
+        },
+      },
     },
   });
 
   useEffect(() => {
     if (server) {
       form.setValue("name", server.name);
-      form.setValue("imageUrl", server.imageUrl);
+      form.setValue("file.file.fileUrl", server.imageUrl);
     }
   }, [server, form]);
 
@@ -70,7 +76,7 @@ const EditServerModal = () => {
         await editServer({
           serverId: server.id,
           name: values.name.trim(),
-          imageUrl: values.imageUrl,
+          imageUrl: values.file.file.fileUrl,
         });
       }
       form.reset();
@@ -103,7 +109,7 @@ const EditServerModal = () => {
               <div className="flex items-center justify-center text-center">
                 <FormField
                   control={form.control}
-                  name="imageUrl"
+                  name="file.file"
                   render={({ field }) => (
                     <FormItem>
                       <FileUpload

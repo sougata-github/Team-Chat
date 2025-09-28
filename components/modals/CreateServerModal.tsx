@@ -28,14 +28,13 @@ import { useRouter } from "next/navigation";
 import { useModal } from "@/hooks/useModalStore";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { FileFormSchema } from "@/schemas";
 
 const formSchema = z.object({
   name: z.string().min(1, {
     message: "Server name is required.",
   }),
-  imageUrl: z.string().min(1, {
-    message: "Server image is required",
-  }),
+  file: FileFormSchema,
 });
 
 const CreateServerModal = () => {
@@ -50,7 +49,14 @@ const CreateServerModal = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      imageUrl: "",
+      file: {
+        file: {
+          fileName: "",
+          fileKey: "",
+          fileUrl: "",
+          fileType: "",
+        },
+      },
     },
   });
 
@@ -58,7 +64,10 @@ const CreateServerModal = () => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const { serverId } = await createServer(values);
+      const { serverId } = await createServer({
+        name: values.name,
+        imageUrl: values.file.file.fileUrl,
+      });
 
       form.reset();
       router.push(`/servers/${serverId}`);
@@ -91,7 +100,7 @@ const CreateServerModal = () => {
               <div className="flex items-center justify-center text-center">
                 <FormField
                   control={form.control}
-                  name="imageUrl"
+                  name="file.file"
                   render={({ field }) => (
                     <FormItem>
                       <FileUpload

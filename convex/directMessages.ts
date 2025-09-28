@@ -4,6 +4,7 @@ import { v } from "convex/values";
 
 import { query, mutation } from "./_generated/server";
 
+
 export const listByConversation = query({
   args: {
     paginationOpts: paginationOptsValidator,
@@ -52,10 +53,23 @@ export const create = mutation({
     memberIcon: v.string(),
     content: v.string(),
     fileUrl: v.optional(v.string()),
+    fileName: v.optional(v.string()),
+    fileKey: v.optional(v.string()),
+    fileType: v.optional(v.string()),
   },
   handler: async (
     ctx,
-    { conversationId, memberId, memberName, memberIcon, content, fileUrl }
+    {
+      conversationId,
+      memberId,
+      memberName,
+      memberIcon,
+      content,
+      fileUrl,
+      fileName,
+      fileKey,
+      fileType,
+    }
   ) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Unauthorised");
@@ -70,6 +84,9 @@ export const create = mutation({
       memberAvatar: memberIcon,
       content,
       fileUrl,
+      fileName,
+      fileKey,
+      fileType,
       deleted: false,
       createdAt: now,
       updatedAt: now,
