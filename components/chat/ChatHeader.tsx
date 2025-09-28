@@ -15,7 +15,7 @@ interface ChatHeaderProps {
 const ChatHeader = ({ serverId, name, type, imageUrl }: ChatHeaderProps) => {
   return (
     <div className="text-md font-semibold py-4 px-3 flex items-center h-12 border-b">
-      <MobileToggle serverId={serverId} />
+      <MobileToggle />
       {type === "channel" && <Hash className="size-5 text-muted-foreground" />}
       {type === "conversation" && (
         <UserAvatar src={imageUrl} className="mr-2" />
