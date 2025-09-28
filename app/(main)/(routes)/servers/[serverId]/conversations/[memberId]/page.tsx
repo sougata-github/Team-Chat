@@ -1,96 +1,160 @@
+"use client";
+
 import MediaRoom from "@/components/MediaRoom";
-import ChatHeader from "@/components/chat/ChatHeader";
+
 import ChatInput from "@/components/chat/ChatInput";
-import ChatMessages from "@/components/chat/ChatMessages";
+import ChatHeader from "@/components/chat/ChatHeader";
+import ChatMessages, {
+  ChatMessagesSkeleton,
+} from "@/components/chat/ChatMessages";
 
-import { getOrCreateConversation } from "@/lib/conversation";
-import { currentProfile } from "@/lib/current-profile";
-import { db } from "@/lib/db";
+import { useConvexAuth, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useQuery } from "convex-helpers/react/cache/hooks";
 
-import { redirectToSignIn } from "@clerk/nextjs";
+import { useEffect, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Doc } from "@/convex/_generated/dataModel";
+import { DEFAULT_AVATAR } from "@/constants";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Loader2 } from "lucide-react";
 
-import { redirect } from "next/navigation";
+const ConversationSkeleton = () => {
+  return (
+    <div className="flex flex-col h-full overflow-hidden sm:overflow-y-auto custom-scrollbar bg-muted-foreground/5">
+      <div className="h-12 border-b flex py-4 px-3 items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Skeleton className="size-6 rounded-full" />
+          <Skeleton className="h-5 rounded w-20" />
+        </div>
+        <Skeleton className="h-5 rounded w-10" />
+      </div>
+      <ChatMessagesSkeleton />
+      <div className="pb-6 p-4">
+        <Skeleton className="h-12 w-full rounded" />
+      </div>
+    </div>
+  );
+};
 
-interface MemberIdPageProps {
-  params: {
-    memberId: string;
+const Page = () => {
+  const { isAuthenticated } = useConvexAuth();
+
+  const router = useRouter();
+
+  const params = useParams<{
     serverId: string;
-  };
-  searchParams: {
-    video?: boolean;
-  };
-}
+    memberId: string;
+  }>();
 
-const Page = async ({ params, searchParams }: MemberIdPageProps) => {
-  const profile = await currentProfile();
+  const searchParams = useSearchParams();
 
-  if (!profile) {
-    return redirectToSignIn();
-  }
+  const isVideo = searchParams?.get("video") === "true";
 
-  const currentMember = await db.member.findFirst({
-    where: {
-      serverId: params.serverId,
-      profileId: profile.id,
-    },
-    include: {
-      profile: true,
-    },
-  });
+  const serverId = Array.isArray(params?.serverId)
+    ? params.serverId[0]
+    : params?.serverId;
 
-  if (!currentMember) {
-    return redirect("/");
-  }
+  const memberId = Array.isArray(params?.memberId)
+    ? params.memberId[0]
+    : params?.memberId;
 
-  const conversation = await getOrCreateConversation(
-    currentMember.id,
-    params.memberId
+  const profile = useQuery(
+    api.profiles.getProfileByClerkId,
+    isAuthenticated ? {} : "skip"
   );
 
-  if (!conversation) {
-    return redirect(`/servers/${params.serverId}`);
+  const currentMember = useQuery(
+    api.members.getMemberProfileByProfile,
+    profile ? { serverId } : "skip"
+  );
+
+  const memberExists = useQuery(
+    api.members.checkMember,
+    profile
+      ? {
+          serverId,
+          memberTwoId: memberId,
+        }
+      : "skip"
+  );
+
+  const [conversationWithMembers, setConversationWithMembers] = useState<{
+    conversation: Doc<"conversations"> | null;
+    memberOne: Doc<"members"> & {
+      profile: Doc<"profiles"> | null;
+    };
+    memberTwo: Doc<"members"> & {
+      profile: Doc<"profiles"> | null;
+    };
+  } | null>(null);
+
+  const getOrCreateConversation = useMutation(
+    api.conversations.getOrCreateConversation
+  );
+
+  //when member leaves or gets kicked out
+  useEffect(() => {
+    if (currentMember === null || memberExists === null) {
+      router.push("/");
+      return;
+    }
+  }, [currentMember, memberExists]);
+
+  useEffect(() => {
+    if (!profile || !currentMember) return;
+
+    (async () => {
+      const conversationWithMembers = await getOrCreateConversation({
+        serverId,
+        memberOneId: currentMember.member.id,
+        memberTwoId: memberId,
+      });
+      setConversationWithMembers(conversationWithMembers);
+    })();
+  }, [currentMember, memberId, profile, getOrCreateConversation]);
+
+  if (!conversationWithMembers) {
+    return <ConversationSkeleton />;
   }
 
-  const { memberOne, memberTwo } = conversation;
+  const { memberOne, memberTwo, conversation } = conversationWithMembers;
 
-  // not the logged-in user
   const otherMember =
-    memberOne.profileId === profile.id ? memberTwo : memberOne;
+    memberOne.profileId === profile?.id ? memberTwo : memberOne;
 
   return (
-    <div className="bg-white dark:bg-[#313338] flex flex-col h-full overflow-hidden sm:overflow-y-auto custom-scrollbar">
-      <ChatHeader
-        imageUrl={otherMember.profile.imageUrl}
-        name={otherMember.profile.name}
-        serverId={params.serverId}
-        type="conversation"
-      />
-      {searchParams.video && (
-        <MediaRoom chatId={conversation.id} video={true} audio={true} />
-      )}
-      {!searchParams.video && (
+    <div className="bg-muted-foreground/5 flex flex-col h-full overflow-hidden sm:overflow-y-auto custom-scrollbar">
+      {profile && currentMember && otherMember.profile && conversation && (
         <>
-          <ChatMessages
-            member={currentMember}
+          <ChatHeader
+            imageUrl={otherMember.profile.imageUrl}
             name={otherMember.profile.name}
-            chatId={conversation.id}
+            serverId={serverId}
             type="conversation"
-            apiUrl="/api/direct-messages"
-            paramKey="conversationId"
-            paramValue={conversation.id}
-            socketUrl="/api/socket/direct-messages"
-            socketQuery={{
-              conversationId: conversation.id,
-            }}
           />
-          <ChatInput
-            name={otherMember.profile.name}
-            type="conversation"
-            apiUrl="/api/socket/direct-messages"
-            query={{
-              conversationId: conversation.id,
-            }}
-          />
+          {isVideo && (
+            <MediaRoom chatId={conversation.id} video={true} audio={true} />
+          )}
+          {!isVideo && (
+            <>
+              <ChatMessages
+                isAuthenticated={isAuthenticated}
+                member={currentMember?.member}
+                name={otherMember.profile.name}
+                chatId={conversation.id}
+                type="conversation"
+              />
+              <ChatInput
+                memberName={profile?.name ?? "Unknown User"}
+                memberIcon={profile?.imageUrl ?? DEFAULT_AVATAR}
+                type="conversation"
+                memberId={currentMember.member.id}
+                name={otherMember.profile.name}
+                conversationId={conversation.id}
+              />
+            </>
+          )}
         </>
       )}
     </div>

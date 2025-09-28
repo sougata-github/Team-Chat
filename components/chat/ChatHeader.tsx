@@ -1,9 +1,9 @@
 import { Hash } from "lucide-react";
 
+import ChatVideoButton from "../ChatVideoButton";
 import MobileToggle from "../MobileToggle";
 import UserAvatar from "../UserAvatar";
-import SocketIndicator from "../SocketIndicator";
-import ChatVideoButton from "../ChatVideoButton";
+
 
 interface ChatHeaderProps {
   serverId: string;
@@ -14,18 +14,15 @@ interface ChatHeaderProps {
 
 const ChatHeader = ({ serverId, name, type, imageUrl }: ChatHeaderProps) => {
   return (
-    <div className="text-md font-semibold py-2 px-3 flex items-center h-12 border-neutral-200 dark:border-neutral-800 border-b-2">
+    <div className="text-md font-semibold py-4 px-3 flex items-center h-12 border-b">
       <MobileToggle serverId={serverId} />
-      {type === "channel" && (
-        <Hash className="w-5 h-5 text-zinc-500 dark:text-zinc-400 mr-2" />
-      )}
+      {type === "channel" && <Hash className="size-5 text-muted-foreground" />}
       {type === "conversation" && (
-        <UserAvatar src={imageUrl} className="h-8 w-8 md:h-8 md:w-8 mr-2" />
+        <UserAvatar src={imageUrl} className="mr-2" />
       )}
-      <p className="font-semibold text-md text-black dark:text-white">{name}</p>
+      <p className="font-semibold text-base ml-1.5">{name}</p>
       <div className="ml-auto flex items-center">
         {type === "conversation" && <ChatVideoButton />}
-        <SocketIndicator />
       </div>
     </div>
   );

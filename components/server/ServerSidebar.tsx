@@ -1,92 +1,121 @@
-import { currentProfile } from "@/lib/current-profile";
-import { ChannelType, MemberRole } from "@prisma/client";
-import { db } from "@/lib/db";
-
-import { redirect } from "next/navigation";
-
-import { ScrollArea } from "../ui/scroll-area";
+"use client";
 
 import { Hash, Mic, ShieldAlert, ShieldCheck, Video } from "lucide-react";
+import { api } from "@/convex/_generated/api";
+import { useConvexAuth } from "convex/react";
+import { useQuery } from "convex-helpers/react/cache/hooks";
 
-import { Separator } from "../ui/separator";
-
+import { ScrollArea } from "../ui/scroll-area";
 import ServerSection from "./ServerSection";
-import ServerMember from "./ServerMember";
-import ServerHeader from "./ServerHeader";
-import ServerSearch from "./ServerSearch";
 import ServerChannel from "./ServerChannel";
+import { Separator } from "../ui/separator";
+import ServerSearch, { ServerSearchSkeleton } from "./ServerSearch";
+import ServerMember from "./ServerMember";
+import ServerHeader, { ServerHeaderSkeleton } from "./ServerHeader";
+import { useParams } from "next/navigation";
+import { Skeleton } from "../ui/skeleton";
 
-interface ServerSidebarProps {
-  serverId: string;
-}
-
-const iconMap = {
-  [ChannelType.TEXT]: <Hash className="mr-2 h-4 w-4" />,
-  [ChannelType.AUDIO]: <Mic className="mr-2 h-4 w-4" />,
-  [ChannelType.VIDEO]: <Video className="mr-2 h-4 w-4" />,
+const iconMap: Record<string, React.ReactNode> = {
+  text: <Hash className="mr-2 h-4 w-4" />,
+  audio: <Mic className="mr-2 h-4 w-4" />,
+  video: <Video className="mr-2 h-4 w-4" />,
 };
 
-const roleIconMap = {
-  [MemberRole.GUEST]: null,
-  [MemberRole.MODERATOR]: (
-    <ShieldCheck className="h-4 w-4 mr-2 text-indigo-500" />
-  ),
-  [MemberRole.ADMIN]: <ShieldAlert className="h-4 w-4 mr-2 text-rose-500" />,
+const roleIconMap: Record<string, React.ReactNode | null> = {
+  guest: null,
+  moderator: <ShieldCheck className="h-4 w-4 mr-2 text-indigo-500" />,
+  admin: <ShieldAlert className="h-4 w-4 mr-2 text-rose-500" />,
 };
 
-const ServerSidebar = async ({ serverId }: ServerSidebarProps) => {
-  const profile = await currentProfile();
+const SidebarSkeleton = () => {
+  return (
+    <div className="flex flex-col h-full text-primary w-full bg-background border-r">
+      <ServerHeaderSkeleton />
+      <ScrollArea className="flex-1 px-3">
+        <div className="mt-2">
+          <ServerSearchSkeleton />
+        </div>
+        <Separator className="my-2" />
+        <ul className="flex flex-col gap-5">
+          {[...new Array(3)].fill(1).map((_, index) => (
+            <div key={index}>
+              <div className="flex justify-between items-center">
+                <Skeleton className="h-2 rounded" />
+              </div>
+              <div className="flex flex-col gap-2">
+                {[...new Array(2)].fill(1).map((_, index) => (
+                  <div key={index}>
+                    <Skeleton className="h-5 rounded-md" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+          <div>
+            <div className="flex justify-between items-center">
+              <Skeleton className="h-2 rounded" />
+            </div>
+            <div className="flex flex-col gap-4">
+              {[...new Array(4)].fill(1).map((_, index) => (
+                <div key={index} className="flex gap-2 items-center">
+                  <Skeleton className="size-5  rounded-full" />
+                  <Skeleton className="h-5 w-[80%]" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </ul>
+      </ScrollArea>
+    </div>
+  );
+};
 
-  if (!profile) {
-    return redirect("/");
+const ServerSidebar = () => {
+  const params = useParams<{
+    serverId: string;
+  }>();
+
+  const { isLoading, isAuthenticated } = useConvexAuth();
+  const profile = useQuery(
+    api.profiles.getProfileByClerkId,
+    isAuthenticated ? {} : "skip"
+  );
+
+  const server = useQuery(
+    api.servers.getServerWithChannelsAndMembers,
+    isAuthenticated
+      ? {
+          serverId: params.serverId,
+        }
+      : "skip"
+  );
+
+  if (isLoading || server === undefined || profile === undefined) {
+    return <SidebarSkeleton />;
   }
 
-  const server = await db.server.findUnique({
-    where: {
-      id: serverId,
-    },
-    include: {
-      channels: {
-        orderBy: {
-          createdAt: "asc",
-        },
-      },
-      members: {
-        include: {
-          profile: true,
-        },
-        orderBy: {
-          role: "asc",
-        },
-      },
-    },
-  });
+  if (!server) return null;
 
-  const textChannels = server?.channels.filter(
-    (channel) => channel.type === ChannelType.TEXT
-  );
-  const audioChannels = server?.channels.filter(
-    (channel) => channel.type === ChannelType.AUDIO
-  );
-  const videoChannels = server?.channels.filter(
-    (channel) => channel.type === ChannelType.VIDEO
-  );
+  const textChannels = server.channels.filter((c) => c.type === "text");
+  const audioChannels = server.channels.filter((c) => c.type === "audio");
+  const videoChannels = server.channels.filter((c) => c.type === "video");
 
-  const members = server?.members.filter(
-    (member) => member.profileId !== profile.id
+  //exclude logged-in user
+  const members = server.membersWithProfiles.filter(
+    (m) => m.profileId !== profile.id
   );
-
-  if (!server) {
-    return redirect("/");
-  }
-
-  const role = server.members.find(
-    (member) => member.profileId === profile.id
+  //get logged-in user role
+  const role = server.membersWithProfiles.find(
+    (m) => m.profileId === profile.id
   )?.role;
 
   return (
-    <div className="flex flex-col h-full text-primary w-full dark:bg-[#2B2D31] bg-[#F2F3F5]">
-      <ServerHeader server={server} role={role} />
+    <div className="flex flex-col h-full text-primary w-full bg-background border-r">
+      <ServerHeader
+        serverMembersWithProfiles={server.membersWithProfiles}
+        server={server.server}
+        role={role}
+      />
       <ScrollArea className="flex-1 px-3">
         <div className="mt-2">
           <ServerSearch
@@ -123,19 +152,20 @@ const ServerSidebar = async ({ serverId }: ServerSidebarProps) => {
                 type: "member",
                 data: members?.map((member) => ({
                   id: member.id,
-                  name: member.profile.name,
+                  name: member.profile?.name,
                   icon: roleIconMap[member.role],
                 })),
               },
             ]}
           />
         </div>
-        <Separator className="bg-zinc-200 dark:bg-zinc-700 rounded-md my-2" />
+        <Separator className="my-2" />
         {!!textChannels?.length && (
           <div className="mb-2">
             <ServerSection
+              serverMembersWithProfiles={server.membersWithProfiles}
               sectionType="channels"
-              channelType={ChannelType.TEXT}
+              channelType="text"
               role={role}
               label="Text Channels"
             />
@@ -145,7 +175,7 @@ const ServerSidebar = async ({ serverId }: ServerSidebarProps) => {
                   key={channel.id}
                   role={role}
                   channel={channel}
-                  server={server}
+                  server={server.server}
                 />
               ))}
             </div>
@@ -154,8 +184,9 @@ const ServerSidebar = async ({ serverId }: ServerSidebarProps) => {
         {!!audioChannels?.length && (
           <div className="mb-2">
             <ServerSection
+              serverMembersWithProfiles={server.membersWithProfiles}
               sectionType="channels"
-              channelType={ChannelType.AUDIO}
+              channelType="audio"
               role={role}
               label="Audio Channels"
             />
@@ -165,7 +196,7 @@ const ServerSidebar = async ({ serverId }: ServerSidebarProps) => {
                   key={channel.id}
                   role={role}
                   channel={channel}
-                  server={server}
+                  server={server.server}
                 />
               ))}
             </div>
@@ -174,8 +205,9 @@ const ServerSidebar = async ({ serverId }: ServerSidebarProps) => {
         {!!videoChannels?.length && (
           <div className="mb-2">
             <ServerSection
+              serverMembersWithProfiles={server.membersWithProfiles}
               sectionType="channels"
-              channelType={ChannelType.VIDEO}
+              channelType="video"
               role={role}
               label="Video Channels"
             />
@@ -185,7 +217,7 @@ const ServerSidebar = async ({ serverId }: ServerSidebarProps) => {
                   key={channel.id}
                   role={role}
                   channel={channel}
-                  server={server}
+                  server={server.server}
                 />
               ))}
             </div>
@@ -194,14 +226,19 @@ const ServerSidebar = async ({ serverId }: ServerSidebarProps) => {
         {!!members?.length && (
           <div className="mb-2">
             <ServerSection
+              serverMembersWithProfiles={server.membersWithProfiles}
               sectionType="members"
               role={role}
               label="Members"
-              server={server}
+              server={server.server}
             />
             <div className="space-y-[2px]">
               {members.map((member) => (
-                <ServerMember key={member.id} member={member} server={server} />
+                <ServerMember
+                  key={member.id}
+                  member={member}
+                  server={server.server}
+                />
               ))}
             </div>
           </div>

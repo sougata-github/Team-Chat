@@ -1,11 +1,5 @@
 "use client";
 
-import { ServerWithMembersWithProfiles } from "@/types";
-import { MemberRole } from "@prisma/client";
-
-import qs from "query-string";
-import axios from "axios";
-
 import {
   Dialog,
   DialogContent,
@@ -24,11 +18,11 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { ScrollArea } from "../ui/scroll-area";
 import UserAvatar from "../UserAvatar";
+import { ScrollArea } from "../ui/scroll-area";
 
-import { useModal } from "@/hooks/useModalStore";
 import { useState } from "react";
+import { useModal } from "@/hooks/useModalStore";
 
 import {
   Check,
@@ -40,40 +34,47 @@ import {
   ShieldCheck,
   ShieldQuestion,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useConvexAuth, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useQuery } from "convex-helpers/react/cache/hooks";
 
-const roleIconMap = {
-  GUEST: null,
-  MODERATOR: <ShieldCheck className="h-4 w-4 ml-2 text-indigo-500" />,
-  ADMIN: <ShieldAlert className="h-4 w-4 text-rose-500" />,
+const roleIconMap: Record<string, React.ReactNode | null> = {
+  guest: null,
+  moderator: <ShieldCheck className="h-4 w-4 mr-2 text-indigo-500" />,
+  admin: <ShieldAlert className="h-4 w-4 mr-2 text-rose-500" />,
 };
 
 const MembersModal = () => {
-  const { onOpen, isOpen, onClose, type, data } = useModal();
+  const { isOpen, onClose, type, data, setData } = useModal();
 
   const [loadingId, setLoadingId] = useState("");
 
-  const router = useRouter();
+  const { isAuthenticated } = useConvexAuth();
+  const profile = useQuery(
+    api.profiles.getProfileByClerkId,
+    isAuthenticated ? {} : "skip"
+  );
 
-  const { server } = data as { server: ServerWithMembersWithProfiles };
+  const kickMember = useMutation(api.members.deleteMember);
+  const updateMemberRole = useMutation(api.members.updateMemberRole);
+
+  const { serverMembersWithProfiles, server } = data;
 
   const isModalOpen = isOpen && type === "members";
 
   const onKick = async (memberId: string) => {
     try {
       setLoadingId(memberId);
-      const url = qs.stringifyUrl({
-        url: `/api/members/${memberId}`,
-        query: {
-          serverId: server?.id,
-        },
-      });
+      if (serverMembersWithProfiles && server) {
+        const updatedServerMembersWithProfiles = await kickMember({
+          serverId: server.id,
+          memberId,
+        });
 
-      const response = await axios.delete(url);
-
-      router.refresh();
-
-      onOpen("members", { server: response.data });
+        setData({
+          serverMembersWithProfiles: updatedServerMembersWithProfiles,
+        });
+      }
     } catch (error) {
       console.log(error);
     } finally {
@@ -81,20 +82,19 @@ const MembersModal = () => {
     }
   };
 
-  const onRoleChange = async (memberId: string, role: MemberRole) => {
+  const onRoleChange = async (memberId: string, role: string) => {
     try {
       setLoadingId(memberId);
-      const url = qs.stringifyUrl({
-        url: `/api/members/${memberId}`,
-        query: {
-          serverId: server?.id,
-        },
-      });
-
-      const response = await axios.patch(url, { role });
-
-      router.refresh();
-      onOpen("members", { server: response.data });
+      if (serverMembersWithProfiles && server) {
+        const updatedServerMembersWithProfiles = await updateMemberRole({
+          serverId: server.id,
+          memberId,
+          role,
+        });
+        setData({
+          serverMembersWithProfiles: updatedServerMembersWithProfiles,
+        });
+      }
     } catch (error) {
       console.log(error);
     } finally {
@@ -105,33 +105,36 @@ const MembersModal = () => {
   return (
     <Dialog open={isModalOpen} onOpenChange={onClose}>
       <DialogContent className="bg-white text-black overflow-hidden">
-        <DialogHeader className="pt-8 px-6">
+        <DialogHeader className="pt-4 px-6">
           <DialogTitle className="text-2xl font-bold text-center">
             Manage Members
           </DialogTitle>
           <DialogDescription className="text-center text-zinc-500">
-            {server?.members?.length === 1
-              ? `${server?.members?.length} Member`
-              : `${server?.members?.length} Members`}
+            {serverMembersWithProfiles?.length === 1
+              ? `${serverMembersWithProfiles?.length} Member`
+              : `${serverMembersWithProfiles?.length} Members`}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="mt-8 max-h-[420px] pr-6">
-          {server?.members?.map((member) => (
-            <div key={member.id} className="flex items-center gap-x-2 mb-6">
-              <UserAvatar src={member.profile.imageUrl} />
+        <ScrollArea className="mt-4 max-h-[420px] pr-6">
+          {serverMembersWithProfiles?.map((member) => (
+            <div key={member.id} className="flex items-center gap-x-2 mb-4">
+              <UserAvatar src={member?.profile?.imageUrl} />
               <div className="flex flex-col gap-y-1">
-                <div className="text-xs font-semibold flex items-center gap-x-1">
-                  {member.profile.name}
+                <div className="text-sm font-medium flex items-center gap-x-1">
+                  {member?.profile?.name}
                   {roleIconMap[member.role]}
                 </div>
-                <p className="text-xs text-zinc-500">{member.profile.email}</p>
+                <p className="text-xs text-muted-foreground">
+                  {member?.profile?.email}
+                </p>
               </div>
-              {server.profileId !== member.profileId &&
+              {profile &&
+                profile.id !== member.profileId &&
                 loadingId !== member.id && (
                   <div className="ml-auto">
                     <DropdownMenu>
                       <DropdownMenuTrigger>
-                        <MoreVertical className="h-4 w-4 text-zinc-500" />
+                        <MoreVertical className="h-4 w-4 text-muted-foreground" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent side="left">
                         <DropdownMenuSub>
@@ -142,22 +145,22 @@ const MembersModal = () => {
                           <DropdownMenuPortal>
                             <DropdownMenuSubContent>
                               <DropdownMenuItem
-                                onClick={() => onRoleChange(member.id, "GUEST")}
+                                onClick={() => onRoleChange(member.id, "guest")}
                               >
                                 <Shield className="h-4 w-4 mr-2" />
                                 Guest
-                                {member.role === "GUEST" && (
+                                {member.role === "guest" && (
                                   <Check className="h-4 w-4 ml-auto" />
                                 )}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() =>
-                                  onRoleChange(member.id, "MODERATOR")
+                                  onRoleChange(member.id, "moderator")
                                 }
                               >
                                 <ShieldCheck className="h-4 w-4 mr-2" />
                                 Moderator
-                                {member.role === "MODERATOR" && (
+                                {member.role === "moderator" && (
                                   <Check className="h-4 w-4 ml-2" />
                                 )}
                               </DropdownMenuItem>

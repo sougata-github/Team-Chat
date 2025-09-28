@@ -18,7 +18,13 @@ const FileUpload = ({ onChange, value, endpoint }: FileUploadProps) => {
   if (value && fileType !== "pdf") {
     return (
       <div className="relative h-20 w-20">
-        <Image fill src={value} alt="Upload" className="rounded-full" />
+        <Image
+          fill
+          src={value}
+          alt="Upload"
+          className="rounded-full"
+          unoptimized
+        />
         <button
           className="bg-rose-500 text-white p-1 rounded-full absolute top-0 right-0 shadow-sm"
           type="button"
@@ -55,9 +61,10 @@ const FileUpload = ({ onChange, value, endpoint }: FileUploadProps) => {
 
   return (
     <UploadDropzone
+      className="border-muted-foreground/20 p-5 ut-button:bg-indigo-500 ut-button:px-4 ut-button:text-white ut-button:text-sm ut-button:font-medium w-[280px] ut-button:w-[115px] ut-uploading:ut-button:hover:bg-black ut-uploading:ut-button:hover:text-black"
       endpoint={endpoint}
       onClientUploadComplete={(res) => {
-        onChange(res?.[0].url);
+        onChange(res?.[0].ufsUrl);
       }}
       onUploadError={(error: Error) => {
         console.log(error);

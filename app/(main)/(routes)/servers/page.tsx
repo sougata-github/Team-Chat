@@ -1,5 +1,7 @@
-const Page = () => {
-  return <div>page</div>;
-};
+"use client";
 
-export default Page;
+import { redirect } from "next/navigation";
+
+export default function Page() {
+  return redirect("/");
+}

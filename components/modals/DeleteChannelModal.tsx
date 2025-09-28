@@ -9,17 +9,17 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useModal } from "@/hooks/useModalStore";
 import { useState } from "react";
 
-import axios from "axios";
-
-import qs from "query-string";
-
 import { Button } from "../ui/button";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 const DeleteChannelModal = () => {
+  const pathname = usePathname();
+
   const { isOpen, onClose, type, data } = useModal();
 
   const { server, channel } = data;
@@ -28,25 +28,26 @@ const DeleteChannelModal = () => {
 
   const router = useRouter();
 
+  const deleteChannel = useMutation(api.channels.deleteChannel);
+
   const isModalOpen = isOpen && type === "deleteChannel";
 
   const onClick = async () => {
     try {
       setIsLoading(true);
 
-      const url = qs.stringifyUrl({
-        url: `/api/channels/${channel?.id}`,
-        query: {
-          serverId: server?.id,
-        },
-      });
-
-      await axios.delete(url);
+      if (server && channel) {
+        await deleteChannel({
+          serverId: server.id,
+          channelId: channel.id,
+        });
+      }
 
       onClose();
 
-      router.push(`/servers/${server?.id}`);
-      router.refresh();
+      if (pathname === `/servers/${server?.id}/channels/${channel?.id}`) {
+        router.replace(`/servers/${server?.id}`);
+      }
     } catch (error) {
       console.log(error);
     } finally {
@@ -71,7 +72,11 @@ const DeleteChannelModal = () => {
         </DialogHeader>
         <DialogFooter className="bg-gray-100 px-6 py-4">
           <div className="flex items-center justify-between w-full">
-            <Button disabled={isLoading} onClick={onClose} variant="ghost">
+            <Button
+              disabled={isLoading}
+              onClick={onClose}
+              className="bg-black hover:bg-black/80 text-white"
+            >
               Cancel
             </Button>
             <Button disabled={isLoading} variant="primary" onClick={onClick}>

@@ -1,8 +1,5 @@
 "use client";
 
-import { ServerWithMembersWithProfiles } from "@/types";
-import { MemberRole } from "@prisma/client";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,27 +19,47 @@ import {
 } from "lucide-react";
 
 import { useModal } from "@/hooks/useModalStore";
+import { Doc } from "@/convex/_generated/dataModel";
+import { Skeleton } from "../ui/skeleton";
+
+export type serverWithMemeberProfiles = Doc<"members"> & {
+  profile: Doc<"profiles"> | null;
+};
 
 interface ServerHeaderProps {
-  server: ServerWithMembersWithProfiles;
-  role?: MemberRole;
+  serverMembersWithProfiles: serverWithMemeberProfiles[] | null;
+  server: Doc<"servers">;
+  role?: string;
 }
 
-const ServerHeader = ({ server, role }: ServerHeaderProps) => {
+export const ServerHeaderSkeleton = () => {
+  return (
+    <div className="w-full px-3 flex items-center h-12 border-b">
+      <Skeleton className="h-5 w-32 rounded" />
+      <Skeleton className="h-5 w-5 ml-2 md:ml-auto rounded-sm" />
+    </div>
+  );
+};
+
+const ServerHeader = ({
+  serverMembersWithProfiles,
+  server,
+  role,
+}: ServerHeaderProps) => {
   const { onOpen } = useModal();
 
-  const isAdmin = role === MemberRole.ADMIN;
-  const isModerator = isAdmin || role === MemberRole.MODERATOR;
+  const isAdmin = role === "admin";
+  const isModerator = isAdmin || role === "moderator";
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="focus:outline-none" asChild>
-        <button className="w-full text-md font-semibold px-3 flex items-center h-12 border-neutral-200 dark:border-neutral-800 border-b-2 hover:bg-zinc-700/10 dark:hover-bg-zinc-700/50 transition">
+        <button className="w-full text-md font-semibold px-3 flex items-center h-12 border-b transition">
           <p className="line-clamp-1">{server.name}</p>
           <ChevronDown className="h-5 w-5 ml-2 md:ml-auto" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56 text-xs font-medium text-black dark:text-neutral-400 space-y-[2px]">
+      <DropdownMenuContent className="w-56 text-xs font-medium space-y-[2px]">
         {isModerator && (
           <DropdownMenuItem
             className="text-indigo-600 dark:text-indigo-400 px-3 py-2 text-sm cursor-pointer"
@@ -64,7 +81,9 @@ const ServerHeader = ({ server, role }: ServerHeaderProps) => {
         {isAdmin && (
           <DropdownMenuItem
             className="px-3 py-2 text-sm cursor-pointer"
-            onClick={() => onOpen("members", { server })}
+            onClick={() =>
+              onOpen("members", { serverMembersWithProfiles, server })
+            }
           >
             Manage Members
             <Users className="h-4 w-4 ml-auto" />

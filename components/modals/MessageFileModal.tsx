@@ -1,27 +1,26 @@
 "use client";
 
-import axios from "axios";
-
-import qs from "query-string";
-
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import {
   Dialog,
-  DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogContent,
+  DialogDescription,
 } from "../ui/dialog";
-import { Form, FormField, FormItem } from "../ui/form";
 import { Button } from "../ui/button";
 import FileUpload from "../FileUpload";
+import { Form, FormField, FormItem } from "../ui/form";
 
 import { useRouter } from "next/navigation";
 import { useModal } from "@/hooks/useModalStore";
+
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 const formSchema = z.object({
   fileUrl: z.string().min(1, {
@@ -32,9 +31,7 @@ const formSchema = z.object({
 const MessageFileModal = () => {
   const { isOpen, onClose, type, data } = useModal();
 
-  const { apiUrl, query } = data;
-
-  const router = useRouter();
+  const { query } = data;
 
   const isModalOpen = isOpen && type === "messageFile";
 
@@ -45,23 +42,33 @@ const MessageFileModal = () => {
     },
   });
 
+  const createMessage = useMutation(api.messages.create);
+  const createDirectMessage = useMutation(api.directMessages.create);
+
   const isLoading = form.formState.isSubmitting;
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const url = qs.stringifyUrl({
-        url: apiUrl || "",
-        query,
-      });
-
-      await axios.post(url, {
-        ...values,
-        content: values.fileUrl,
-      });
-
+      if (query?.type === "channel") {
+        await createMessage({
+          channelId: query?.channelId,
+          memberId: query?.memberId,
+          fileUrl: values.fileUrl,
+          content: "",
+          memberIcon: query.memberIcon,
+          memberName: query.memberName,
+        });
+      } else {
+        await createDirectMessage({
+          conversationId: query?.conversationId,
+          memberId: query?.memberId,
+          fileUrl: values.fileUrl,
+          content: "",
+          memberIcon: query?.memberIcon,
+          memberName: query?.memberName,
+        });
+      }
       form.reset();
-      router.refresh();
-
       onClose();
     } catch (error) {
       console.log(error);

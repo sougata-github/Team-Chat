@@ -1,17 +1,22 @@
 "use client";
 
 import { Smile } from "lucide-react";
-
-import Picker from "@emoji-mart/react";
-import data from "@emoji-mart/data";
-
+import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
-
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { EmojiStyle, Theme } from "emoji-picker-react";
 
 interface EmojiPickerProps {
   onChange: (value: string) => void;
 }
+
+// Dynamic import to prevent SSR issues
+const Picker = dynamic(
+  () => import("emoji-picker-react").then((mod) => mod.default),
+  {
+    ssr: false,
+  }
+);
 
 const EmojiPicker = ({ onChange }: EmojiPickerProps) => {
   const { resolvedTheme } = useTheme();
@@ -19,7 +24,7 @@ const EmojiPicker = ({ onChange }: EmojiPickerProps) => {
   return (
     <Popover>
       <PopoverTrigger>
-        <Smile className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition" />
+        <Smile className="text-muted-foreground transition" />
       </PopoverTrigger>
       <PopoverContent
         side="right"
@@ -27,9 +32,11 @@ const EmojiPicker = ({ onChange }: EmojiPickerProps) => {
         className="bg-transparent border-none shadow-none drop-shadow-none mb-16"
       >
         <Picker
-          theme={resolvedTheme}
-          data={data}
-          onEmojiSelect={(emoji: any) => onChange(emoji.native)}
+          theme={resolvedTheme === "dark" ? Theme.DARK : Theme.LIGHT}
+          onEmojiClick={(emojiData: any) => onChange(emojiData.emoji)}
+          width={350}
+          height={450}
+          emojiStyle={EmojiStyle.APPLE}
         />
       </PopoverContent>
     </Popover>

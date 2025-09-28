@@ -10,8 +10,8 @@ import { Button } from "../ui/button";
 import { useModal } from "@/hooks/useModalStore";
 import { useOrigin } from "@/hooks/useOrigin";
 import { useState } from "react";
-
-import axios from "axios";
+import { api } from "@/convex/_generated/api";
+import { useMutation } from "convex/react";
 
 const InviteModal = () => {
   const { onOpen, isOpen, onClose, type, data } = useModal();
@@ -23,6 +23,10 @@ const InviteModal = () => {
 
   const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const regenerateInviteCodeMutation = useMutation(
+    api.servers.regenerateInviteCode
+  );
 
   const isModalOpen = isOpen && type === "invite";
 
@@ -39,13 +43,14 @@ const InviteModal = () => {
     try {
       setIsLoading(true);
 
-      const response = await axios.patch(
-        `/api/servers/${server?.id}/invite-code`
-      );
-
-      onOpen("invite", {
-        server: response.data,
-      });
+      if (server) {
+        const updatedServer = await regenerateInviteCodeMutation({
+          serverId: server.id,
+        });
+        onOpen("invite", {
+          server: updatedServer,
+        });
+      }
     } catch (error) {
       console.log(error);
     } finally {
@@ -71,7 +76,11 @@ const InviteModal = () => {
               className="bg-zinc-300/50 border-0 focus-visible:ring-0 text-black focus-visible:ring-offset-0"
               value={inviteUrl}
             />
-            <Button size="icon" disabled={isLoading}>
+            <Button
+              size="icon"
+              disabled={isLoading}
+              className="hover:bg-muted-foreground/20 bg-transparent hover:text-black"
+            >
               {copied ? (
                 <Check className="w-4 h-4" />
               ) : (

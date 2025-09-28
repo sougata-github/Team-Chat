@@ -1,7 +1,5 @@
 "use client";
 
-import axios from "axios";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -26,9 +24,11 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import FileUpload from "../FileUpload";
 
-import { useRouter } from "next/navigation";
-import { useModal } from "@/hooks/useModalStore";
 import { useEffect } from "react";
+
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useModal } from "@/hooks/useModalStore";
 
 const formSchema = z.object({
   name: z.string().min(1, {
@@ -45,7 +45,7 @@ const EditServerModal = () => {
   const isModalOpen = isOpen && type === "editServer";
   const { server } = data;
 
-  const router = useRouter();
+  const editServer = useMutation(api.servers.editServer);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -66,11 +66,14 @@ const EditServerModal = () => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await axios.patch(`/api/servers/${server?.id}`, values);
-
+      if (server) {
+        await editServer({
+          serverId: server.id,
+          name: values.name.trim(),
+          imageUrl: values.imageUrl,
+        });
+      }
       form.reset();
-      router.refresh();
-
       onClose();
     } catch (error) {
       console.log(error);

@@ -1,11 +1,5 @@
 "use client";
 
-import axios from "axios";
-
-import qs from "query-string";
-
-import { ChannelType } from "@prisma/client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -35,9 +29,11 @@ import {
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useModal } from "@/hooks/useModalStore";
 import { useEffect } from "react";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 const formSchema = z.object({
   name: z
@@ -48,7 +44,7 @@ const formSchema = z.object({
     .refine((name) => name !== "general", {
       message: "Channel name cannot be 'general'",
     }),
-  type: z.nativeEnum(ChannelType),
+  type: z.string(),
 });
 
 const CreateChannelModal = () => {
@@ -57,15 +53,15 @@ const CreateChannelModal = () => {
   const isModalOpen = isOpen && type === "createChannel";
   const { channelType } = data;
 
-  const router = useRouter();
-
   const params = useParams();
+
+  const createChannel = useMutation(api.channels.createChannel);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      type: channelType || ChannelType.TEXT,
+      type: channelType || "text",
     },
   });
 
@@ -73,7 +69,7 @@ const CreateChannelModal = () => {
     if (channelType) {
       form.setValue("type", channelType);
     } else {
-      form.setValue("type", ChannelType.TEXT);
+      form.setValue("type", "text");
     }
   }, [channelType, form]);
 
@@ -81,18 +77,14 @@ const CreateChannelModal = () => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const url = qs.stringifyUrl({
-        url: "/api/channels",
-        query: {
-          serverId: params?.serverId,
-        },
-      });
-
-      await axios.post(url, values);
-
+      if (params && params.serverId) {
+        await createChannel({
+          serverId: params.serverId as string,
+          name: values.name.trim(),
+          type: values.type,
+        });
+      }
       form.reset();
-      router.refresh();
-
       onClose();
     } catch (error) {
       console.log(error);
@@ -153,7 +145,7 @@ const CreateChannelModal = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {Object.values(ChannelType).map((type) => (
+                        {["text", "audio", "video"].map((type) => (
                           <SelectItem
                             key={type}
                             value={type}

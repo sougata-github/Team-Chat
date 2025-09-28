@@ -1,7 +1,5 @@
 "use client";
 
-import axios from "axios";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -28,6 +26,8 @@ import FileUpload from "../FileUpload";
 
 import { useRouter } from "next/navigation";
 import { useModal } from "@/hooks/useModalStore";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 const formSchema = z.object({
   name: z.string().min(1, {
@@ -42,6 +42,7 @@ const CreateServerModal = () => {
   const { isOpen, onClose, type } = useModal();
 
   const isModalOpen = isOpen && type === "createServer";
+  const createServer = useMutation(api.servers.createServer);
 
   const router = useRouter();
 
@@ -57,11 +58,10 @@ const CreateServerModal = () => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await axios.post("/api/servers/", values);
+      const { serverId } = await createServer(values);
 
       form.reset();
-      router.refresh();
-
+      router.push(`/servers/${serverId}`);
       onClose();
     } catch (error) {
       console.log(error);
@@ -107,7 +107,7 @@ const CreateServerModal = () => {
                 control={form.control}
                 name="name"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="-mt-2">
                     <FormLabel className="uppercase text-xs text-zinc-500 dark:text-secondary/70">
                       Server name
                     </FormLabel>

@@ -12,9 +12,10 @@ import {
 import { useModal } from "@/hooks/useModalStore";
 import { useState } from "react";
 
-import axios from "axios";
 import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 const LeaveServerModal = () => {
   const { isOpen, onClose, type, data } = useModal();
@@ -27,15 +28,18 @@ const LeaveServerModal = () => {
 
   const isModalOpen = isOpen && type === "leaveServer";
 
+  const leaveServer = useMutation(api.servers.leaveServer);
+
   const onClick = async () => {
     try {
       setIsLoading(true);
-      await axios.patch(`/api/servers/${server?.id}/leave`);
-
+      if (server) {
+        await leaveServer({
+          serverId: server.id,
+        });
+      }
       onClose();
-
       router.push("/");
-      router.refresh();
     } catch (error) {
       console.log(error);
     } finally {

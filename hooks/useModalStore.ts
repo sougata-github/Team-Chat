@@ -1,6 +1,7 @@
-import { Channel, ChannelType, Server } from "@prisma/client";
-
+import { serverWithMemeberProfiles } from "@/components/server/ServerHeader";
+import { Doc } from "@/convex/_generated/dataModel";
 import { create } from "zustand";
+
 
 export type ModalType =
   | "createServer"
@@ -12,13 +13,13 @@ export type ModalType =
   | "deleteServer"
   | "deleteChannel"
   | "editChannel"
-  | "messageFile"
-  | "deleteMessage";
+  | "messageFile";
 
 interface ModalData {
-  server?: Server;
-  channel?: Channel;
-  channelType?: ChannelType;
+  serverMembersWithProfiles?: serverWithMemeberProfiles[] | null;
+  server?: Doc<"servers">;
+  channel?: Doc<"channels">;
+  channelType?: string;
   apiUrl?: string;
   query?: Record<string, any>;
 }
@@ -27,14 +28,16 @@ interface ModalStore {
   type: ModalType | null;
   data: ModalData;
   isOpen: boolean;
-  onOpen: (type: ModalType, data?: ModalData) => void;
   onClose: () => void;
+  setData: (data: ModalData) => void;
+  onOpen: (type: ModalType, data?: ModalData) => void;
 }
 
 export const useModal = create<ModalStore>((set) => ({
   type: null,
   data: {},
   isOpen: false,
-  onOpen: (type, data = {}) => set({ isOpen: true, type, data }),
   onClose: () => set({ type: null, isOpen: false }),
+  onOpen: (type, data = {}) => set({ isOpen: true, type, data }),
+  setData: (data) => set((state) => ({ data: { ...state.data, ...data } })),
 }));

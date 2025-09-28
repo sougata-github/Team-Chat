@@ -1,11 +1,5 @@
 "use client";
 
-import axios from "axios";
-
-import qs from "query-string";
-
-import { ChannelType } from "@prisma/client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -38,6 +32,8 @@ import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
 import { useModal } from "@/hooks/useModalStore";
 import { useEffect } from "react";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 const formSchema = z.object({
   name: z
@@ -48,7 +44,7 @@ const formSchema = z.object({
     .refine((name) => name !== "general", {
       message: "Channel name cannot be 'general'",
     }),
-  type: z.nativeEnum(ChannelType),
+  type: z.string(),
 });
 
 const EditChannelModal = () => {
@@ -57,13 +53,15 @@ const EditChannelModal = () => {
   const isModalOpen = isOpen && type === "editChannel";
   const { server, channel } = data;
 
+  const editChannel = useMutation(api.channels.editChannel);
+
   const router = useRouter();
 
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      type: channel?.type || ChannelType.TEXT,
+      type: channel?.type || "text",
     },
   });
 
@@ -78,18 +76,15 @@ const EditChannelModal = () => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const url = qs.stringifyUrl({
-        url: `/api/channels/${channel?.id}`,
-        query: {
-          serverId: server?.id,
-        },
-      });
-
-      await axios.patch(url, values);
-
+      if (server && channel) {
+        await editChannel({
+          serverId: server.id,
+          channelId: channel.id,
+          name: values.name.trim(),
+          type: values.type,
+        });
+      }
       form.reset();
-      router.refresh();
-
       onClose();
     } catch (error) {
       console.log(error);
@@ -150,7 +145,7 @@ const EditChannelModal = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {Object.values(ChannelType).map((type) => (
+                        {["text", "audio", "video"].map((type) => (
                           <SelectItem
                             key={type}
                             value={type}

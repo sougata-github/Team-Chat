@@ -1,49 +1,50 @@
-import { currentProfile } from "@/lib/current-profile";
-import { db } from "@/lib/db";
-import { redirectToSignIn } from "@clerk/nextjs";
-import { redirect } from "next/navigation";
+"use client";
 
-interface ServerIdPageProps {
-  params: {
-    serverId: string;
-  };
-}
+import { api } from "@/convex/_generated/api";
+import { useQuery } from "convex-helpers/react/cache/hooks";
 
-const Page = async ({ params }: ServerIdPageProps) => {
-  const profile = await currentProfile();
+import { useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 
-  if (!profile) {
-    return redirectToSignIn();
+const Page = () => {
+  const params = useParams();
+  const serverId = Array.isArray(params?.serverId)
+    ? params?.serverId[0]
+    : params?.serverId;
+
+  const router = useRouter();
+
+  const profile = useQuery(api.profiles.getProfileByClerkId);
+
+  const generalChannel = useQuery(
+    api.servers.getInitialChannel,
+    profile
+      ? {
+          serverId: serverId as string,
+        }
+      : "skip"
+  );
+
+  useEffect(() => {
+    if (generalChannel) {
+      router.replace(`/servers/${serverId}/channels/${generalChannel.id}`);
+    }
+  }, [router, generalChannel, serverId]);
+
+  if (generalChannel === null)
+    return (
+      <div className="sticky top-[50%] flex items-center justify-center">
+        You are not a member of this server
+      </div>
+    );
+
+  if (generalChannel === undefined || profile === undefined) {
+    <div className="sticky top-[50%] flex items-center justify-center">
+      Redirecting to General Channel
+    </div>;
   }
 
-  const server = await db.server.findUnique({
-    where: {
-      id: params.serverId,
-      members: {
-        some: {
-          profileId: profile.id,
-        },
-      },
-    },
-    include: {
-      channels: {
-        where: {
-          name: "general",
-        },
-        orderBy: {
-          createdAt: "asc",
-        },
-      },
-    },
-  });
-
-  const initialChannel = server?.channels[0];
-
-  if (initialChannel?.name !== "general") {
-    return null;
-  }
-
-  return redirect(`/servers/${params.serverId}/channels/${initialChannel?.id}`);
+  return null;
 };
 
 export default Page;

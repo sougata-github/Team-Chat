@@ -1,12 +1,9 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-
 import qs from "query-string";
-
-import { Video, VideoOff } from "lucide-react";
-
 import ActionTooltip from "./ActionTooltip";
+import { Video, VideoOff } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 const ChatVideoButton = () => {
   const searchParams = useSearchParams();

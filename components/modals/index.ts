@@ -1,14 +1,14 @@
+import DeleteChannelModal from "../modals/DeleteChannelModal";
+import CreateChannelModal from "../modals/CreateChannelModal";
+import DeleteServerModal from "../modals/DeleteServerModal";
 import CreateServerModal from "../modals/CreateServerModal";
-import InviteModal from "../modals/InviteModal";
+import MessageFileModal from "../modals/MessageFileModal";
+import LeaveServerModal from "../modals/LeaveServerModal";
+import EditChannelModal from "../modals/EditChannelModal";
 import EditServerModal from "../modals/EditServerModal";
 import MembersModal from "../modals/MembersModal";
-import CreateChannelModal from "../modals/CreateChannelModal";
-import LeaveServerModal from "../modals/LeaveServerModal";
-import DeleteServerModal from "../modals/DeleteServerModal";
-import DeleteChannelModal from "../modals/DeleteChannelModal";
-import EditChannelModal from "../modals/EditChannelModal";
-import MessageFileModal from "../modals/MessageFileModal";
-import DeleteMessageModal from "./DeleteMessageModal";
+import InviteModal from "../modals/InviteModal";
+
 
 export {
   CreateServerModal,
@@ -21,5 +21,4 @@ export {
   DeleteChannelModal,
   EditChannelModal,
   MessageFileModal,
-  DeleteMessageModal,
 };

@@ -3,11 +3,6 @@
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import axios from "axios";
-import qs from "query-string";
-
-import { Member, Profile } from "@prisma/client";
-
 import UserAvatar from "../UserAvatar";
 import ActionTooltip from "../ActionTooltip";
 import { Input } from "../ui/input";
@@ -20,31 +15,31 @@ import Image from "next/image";
 
 import { useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
-import { useModal } from "@/hooks/useModalStore";
 import { useParams, useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
+import { Doc, Id } from "@/convex/_generated/dataModel";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 interface ChatItemProps {
-  id: string;
+  id: Id<"messages"> | Id<"directMessages">;
   type: "channel" | "conversation";
   content: string;
-  member: Member & {
-    profile: Profile;
-  };
+  member: (Doc<"members"> & { profile?: Doc<"profiles"> | null }) | null;
+  memberName: string;
+  memberIcon: string;
   timestamp: string;
-  fileUrl: string | null;
+  fileUrl?: string | null;
   deleted: boolean;
-  currentMember: Member;
+  currentMember: Doc<"members">;
   isUpdated: boolean;
-  socketUrl: string;
-  socketQuery: Record<string, string>;
 }
 
-const roleIconMap = {
-  GUEST: null,
-  MODERATOR: <ShieldCheck className="h-4 w-4 ml-2 text-indigo-500 " />,
-  ADMIN: <ShieldAlert className="h-4 w-4 ml-2 text-rose-500" />,
+const roleIconMap: Record<string, React.ReactNode | null> = {
+  guest: null,
+  moderator: <ShieldCheck className="h-4 w-4 mr-2 text-indigo-500" />,
+  admin: <ShieldAlert className="h-4 w-4 mr-2 text-rose-500" />,
 };
 
 const formSchema = z.object({
@@ -56,16 +51,18 @@ const ChatItem = ({
   type,
   content,
   member,
+  memberName,
+  memberIcon,
   timestamp,
   fileUrl,
   deleted,
   currentMember,
   isUpdated,
-  socketUrl,
-  socketQuery,
 }: ChatItemProps) => {
   const router = useRouter();
   const params = useParams();
+
+  console.log();
 
   useEffect(() => {
     const handleKeyDown = (event: any) => {
@@ -80,20 +77,23 @@ const ChatItem = ({
   }, []);
 
   const [isEditing, setIsEditing] = useState(false);
-  const { onOpen } = useModal();
 
-  const fileType = fileUrl?.split(".").pop();
+  const updateMessage = useMutation(api.messages.update);
+  const deleteMessage = useMutation(api.messages.remove);
 
-  const isOwner = currentMember.id === member.id;
+  const updateDirectMessage = useMutation(api.directMessages.update);
+  const deleteDirectMessage = useMutation(api.directMessages.remove);
 
-  const isAdmin = currentMember.role === "ADMIN";
+  const isAuthor = currentMember._id === member?._id;
 
   const canDeleteMessage =
     type === "channel"
-      ? (isAdmin && !deleted) || (!deleted && isOwner)
-      : !deleted && isOwner;
-  const canEditMessage = !deleted && isOwner && !fileUrl;
+      ? (isAuthor && !deleted) || (!deleted && isAuthor)
+      : !deleted && isAuthor;
 
+  const canEditMessage = !deleted && isAuthor && !fileUrl;
+
+  const fileType = fileUrl?.split(".").pop();
   const isPDF = fileType === "pdf";
   const isImage = !isPDF && fileUrl;
 
@@ -107,16 +107,39 @@ const ChatItem = ({
   const isLoading = form.formState.isSubmitting;
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (values.content.trim().length === 0) return;
+
     try {
-      const url = qs.stringifyUrl({
-        url: `${socketUrl}/${id}`,
-        query: socketQuery,
-      });
+      if (type === "channel") {
+        await updateMessage({
+          id: id as Id<"messages">,
+          content: values.content.trim(),
+        });
+      } else {
+        await updateDirectMessage({
+          id: id as Id<"directMessages">,
+          content: values.content.trim(),
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
 
-      await axios.patch(url, values);
+    form.reset();
+    setIsEditing(false);
+  };
 
-      form.reset();
-      setIsEditing(false);
+  const onDelete = async () => {
+    try {
+      if (type === "channel") {
+        await deleteMessage({
+          id: id as Id<"messages">,
+        });
+      } else {
+        await deleteDirectMessage({
+          id: id as Id<"directMessages">,
+        });
+      }
     } catch (error) {
       console.log(error);
     }
@@ -129,10 +152,10 @@ const ChatItem = ({
   }, [content, form]);
 
   const onMemberClick = () => {
-    if (member.id === currentMember.id) {
+    if (member?.id === currentMember.id) {
       return;
     }
-    router.push(`/servers/${params?.serverId}/conversations/${member.id}`);
+    router.push(`/servers/${params?.serverId}/conversations/${member?.id}`);
   };
 
   return (
@@ -142,24 +165,22 @@ const ChatItem = ({
           className="cursor-pointer hover:drop-shadow-md transition"
           onClick={onMemberClick}
         >
-          <UserAvatar src={member.profile.imageUrl} />
+          <UserAvatar src={memberIcon} />
         </div>
         <div className="flex flex-col w-full">
           <div className="flex items-center gap-x-2">
             <div className="flex items-center">
               <p
-                className="font-semibold text-sm hover:underline cursor-pointer"
+                className="font-semibold text-sm hover:underline cursor-pointer mr-1.5"
                 onClick={onMemberClick}
               >
-                {member.profile.name}
+                {memberName}
               </p>
-              <ActionTooltip label={member.role}>
-                {roleIconMap[member.role]}
+              <ActionTooltip label={member?.role}>
+                {member && roleIconMap[member.role]}
               </ActionTooltip>
             </div>
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">
-              {timestamp}
-            </span>
+            <span className="text-xs text-muted-foreground">{timestamp}</span>
           </div>
           {isImage && (
             <a
@@ -189,17 +210,16 @@ const ChatItem = ({
               </a>
             </div>
           )}
-          {!fileUrl && !isEditing && (
-            <p
-              className={cn(
-                "text-sm text-zinc-600 dark:text-zinc-300",
-                deleted &&
-                  "italic text-zinc-500 dark:text-zinc-400 text-xs mt-1"
-              )}
-            >
+          {deleted && (
+            <p className="italic text-zinc-500 dark:text-zinc-400 text-xs mt-1">
+              This message has been deleted
+            </p>
+          )}
+          {!fileUrl && !isEditing && !deleted && (
+            <p className={cn("text-sm")}>
               {content}
               {isUpdated && !deleted && (
-                <span className="text-[10px] mx-2 text-zinc-500 dark:text-zinc-400">
+                <span className="text-[10px] mx-2 text-muted-foreground">
                   (edited)
                 </span>
               )}
@@ -220,7 +240,7 @@ const ChatItem = ({
                         <div className="relative w-full">
                           <Input
                             disabled={isLoading}
-                            className="p-2 bg-zinc-200/90 dark:bg-zinc-700/75 border-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-600 dark:text-zinc-200"
+                            className="p-2 bg-zinc-200/90 dark:bg-zinc-700/75 border-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-muted-foreground"
                             placeholder="Edited message"
                             {...field}
                             autoComplete="off"
@@ -239,7 +259,7 @@ const ChatItem = ({
                   Save
                 </Button>
               </form>
-              <span className="text-[10px] mt-1 text-zinc-400">
+              <span className="text-[10px] mt-1 text-muted-foreground">
                 Press escape to cancel, enter to save
               </span>
             </Form>
@@ -251,20 +271,15 @@ const ChatItem = ({
           {canEditMessage && (
             <ActionTooltip label="Edit">
               <Edit
-                className="cursor-pointer ml-auto w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
+                className="cursor-pointer ml-auto w-4 h-4 text-muted-foreground transition"
                 onClick={() => setIsEditing(true)}
               />
             </ActionTooltip>
           )}
           <ActionTooltip label="Delete">
             <Trash
-              className="cursor-pointer ml-auto w-4 h-4 text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition"
-              onClick={() =>
-                onOpen("deleteMessage", {
-                  apiUrl: `${socketUrl}/${id}`,
-                  query: socketQuery,
-                })
-              }
+              className="cursor-pointer ml-auto w-4 h-4 text-muted-foreground"
+              onClick={onDelete}
             />
           </ActionTooltip>
         </div>

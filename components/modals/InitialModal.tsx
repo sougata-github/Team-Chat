@@ -1,7 +1,5 @@
 "use client";
 
-import axios from "axios";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -28,6 +26,8 @@ import FileUpload from "../FileUpload";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 const formSchema = z.object({
   name: z.string().min(1, {
@@ -42,6 +42,7 @@ const InitialModal = () => {
   const [isMounted, setIsMounted] = useState(false);
 
   const router = useRouter();
+  const createServer = useMutation(api.servers.createServer);
 
   useEffect(() => {
     setIsMounted(true);
@@ -59,12 +60,12 @@ const InitialModal = () => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await axios.post("/api/servers/", values);
-
+      const { serverId } = await createServer({
+        name: values.name.trim(),
+        imageUrl: values.imageUrl,
+      });
       form.reset();
-      router.refresh();
-
-      window.location.reload();
+      router.push(`/servers/${serverId}`);
     } catch (error) {
       console.log(error);
     }

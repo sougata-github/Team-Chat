@@ -1,38 +1,51 @@
 "use client";
 
-import axios from "axios";
-import qs from "query-string";
-
 import { useForm } from "react-hook-form";
 import { useModal } from "@/hooks/useModalStore";
 
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { Form, FormControl, FormField, FormItem } from "../ui/form";
-import { Input } from "../ui/input";
-
-import { Plus } from "lucide-react";
+import { Paperclip } from "lucide-react";
 
 import EmojiPicker from "../EmojiPicker";
 
 import { useRouter } from "next/navigation";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { Form, FormControl, FormField, FormItem } from "../ui/form";
 
 interface ChatInputProps {
-  apiUrl: string;
-  query: Record<string, any>;
+  memberName: string;
+  memberIcon: string;
+  memberId: string;
+  channelId?: string;
   name: string;
   type: "conversation" | "channel";
+  conversationId?: string;
 }
 
 const formSchema = z.object({
   content: z.string().min(1),
 });
 
-const ChatInput = ({ apiUrl, query, name, type }: ChatInputProps) => {
+const ChatInput = ({
+  memberName,
+  memberIcon,
+  memberId,
+  channelId,
+  name,
+  type,
+  conversationId,
+}: ChatInputProps) => {
   const { onOpen } = useModal();
-
   const router = useRouter();
+
+  const createMessage = useMutation(api.messages.create);
+  const createDirectMessage = useMutation(api.directMessages.create);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -45,13 +58,23 @@ const ChatInput = ({ apiUrl, query, name, type }: ChatInputProps) => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      const url = qs.stringifyUrl({
-        url: apiUrl,
-        query,
-      });
-
-      await axios.post(url, values);
-
+      if (type === "channel" && channelId) {
+        await createMessage({
+          channelId: channelId,
+          content: values.content,
+          memberId,
+          memberName,
+          memberIcon,
+        });
+      } else if (type === "conversation" && conversationId) {
+        await createDirectMessage({
+          memberId,
+          memberName,
+          memberIcon,
+          conversationId,
+          content: values.content,
+        });
+      }
       form.reset();
       router.refresh();
     } catch (error) {
@@ -69,16 +92,27 @@ const ChatInput = ({ apiUrl, query, name, type }: ChatInputProps) => {
             <FormItem>
               <FormControl>
                 <div className="relative p-4 pb-6">
-                  <button
+                  <Button
                     type="button"
-                    onClick={() => onOpen("messageFile", { apiUrl, query })}
-                    className="absolute top-7 left-8 h-[24px] w-[24px] bg-zinc-500 dark:bg-zinc-400 hover:bg-zinc-600 dark:hover:bg-zinc-300 transition rounded-full p-1 flex items-center justify-center"
+                    onClick={() =>
+                      onOpen("messageFile", {
+                        query: {
+                          type,
+                          memberId,
+                          memberName,
+                          memberIcon,
+                          channelId,
+                          conversationId,
+                        },
+                      })
+                    }
+                    className="absolute top-7 left-8 size-6.5 transition rounded-full p-1 bg-transparent hover:bg-muted-foreground/20 text-muted-foreground"
                   >
-                    <Plus className="text-white dark:text-[#313338]" />
-                  </button>
+                    <Paperclip />
+                  </Button>
                   <Input
                     disabled={isLoading}
-                    className="px-14 py-6 bg-zinc-200/90 dark:bg-zinc-700/75 border-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-zinc-600 dark:text-zinc-200"
+                    className="px-14 py-6 bg-muted-foreground/15 border-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                     placeholder={`Message ${
                       type === "conversation" ? name : "#" + name
                     }`}
