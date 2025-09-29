@@ -60,13 +60,13 @@ const ServerChannel = ({ channel, server, role }: ServerChannelProps) => {
         <div className="ml-auto flex items-center gap-x-2">
           <ActionTooltip label="Edit">
             <Edit
-              className="hidden group-hover:block w-4 h-4 transition text-muted-foreground"
+              className="md:hidden group-hover:block w-4 h-4 transition text-muted-foreground"
               onClick={(e) => onAction(e, "editChannel")}
             />
           </ActionTooltip>
           <ActionTooltip label="Delete">
             <Trash
-              className="hidden group-hover:block w-4 h-4 transition text-muted-foreground"
+              className="md:hidden group-hover:block w-4 h-4 transition text-muted-foreground"
               onClick={(e) => onAction(e, "deleteChannel")}
             />
           </ActionTooltip>

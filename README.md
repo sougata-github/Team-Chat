@@ -20,7 +20,6 @@
 - Server creation and customization
 - Fully responsive
 - Light / Dark mode
-- Websocket fallback: Polling with alerts
 - Authentication
 
 ## Tech-Stack
